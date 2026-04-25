@@ -6,23 +6,25 @@ def input_error(func):
         try:
             return func(*args, **kwargs)
         except ValueError:
-            return 'Give me true name and phone please.'
-        except KeyError:
-            return 'User is not found'
-        except IndexError:
-            return 'Enter the argument for the command'
+            return 'Enter the command argument or correct argument'
+        except AttributeError:
+            return 'Contact not found'
 
     return inner
 
 
 # Розділяємо введені дані на команди та аргументи
 def parser_input(user_input):
+    if not user_input:
+        return None, []
+
     cmd, *args = user_input.split()
     cmd = cmd.strip().lower()
     return cmd, *args
 
 
 # Додаємо новий контакт до словника
+@input_error
 def add_contact(args, book: AddressBook):
     name, phone, *_ = args
     record = book.find(name)
@@ -43,9 +45,6 @@ def add_birthday(args, book: AddressBook):
     name, birthday_date, *_ = args
     record = book.find(name)
 
-    if record is None:
-        raise KeyError('Contact not found')
-
     record.add_birthday(birthday_date)
     return 'Birthday add'
 
@@ -55,13 +54,7 @@ def show_birthday(args, book: AddressBook):
     name, *_ = args
     record = book.find(name)
 
-    if record is None:
-        raise KeyError('Contact not found')
-
-    if record.birthday is None:
-        raise ValueError('Birthday not found')
-
-    return f"{record.name.value}: {record.birthday.value.strftime('%d.%m.%Y')}"
+    return f"{record.name.value}: {record.birthday.value}"
 
 
 def birthday(book: AddressBook):
@@ -80,37 +73,31 @@ def birthday(book: AddressBook):
     return '\n'.join(result_birthday)
 
 
-# Змінюємо телефон замінючи значення у парі ключ-значення при співпадінні з ключа з аргументом
+# Заміна телефону
 @input_error
 def change_phone(args, book: AddressBook):
     name, old_phone, new_phone, *_ = args
     record = book.find(name)
 
-    if record is None:
-        raise KeyError ('Name not found')
-
-    for p in record.phones:
-        if p.value == old_phone:
-            p.value = new_phone
-            return 'New phone save'
-
-    raise ValueError('Phone not found')
+    record.edit_phone(old_phone, new_phone)
+    return 'Phone edit'
 
 
-# Виводимо потрібний номер телефону при співпадінні ключа зі значенням агрументу
+# Виводимо номер телефону потрібного користувача
 @input_error
 def phone_username(args, book: AddressBook):
     name, *_ = args
     record = book.find(name)
 
-    if record is None:
-        raise KeyError('Contact not found')
-
     return ", ".join(p.value for p in record.phones)
 
 
-# Виводимо весь список доданих
+# Виводимо адресну книгу
+@input_error
 def all_contacts(book: AddressBook):
+    if not book:
+        return 'AddressBook is clean'
+
     return '\n'.join(
         str(record) for record in book.data.values()
     )
@@ -129,6 +116,9 @@ def main():
         if command in ['close', 'exit']:
             print('Good bay!')
             break
+        elif not command:
+            print('Enter command')
+            continue
 
         elif command == 'hello':
             print('How can I help you?')
@@ -138,10 +128,10 @@ def main():
             print(add_birthday(args, book))
         elif command == 'show-birthday':
             print(show_birthday(args, book))
-        elif command == 'birthday':
+        elif command == 'birthdays':
             print(birthday(book))
         elif command == 'phone':
-            print(f'Telephone {phone_username(args, book)}')
+            print(phone_username(args, book))
         elif command == 'change':
             print(change_phone(args, book))
         elif command == 'all':

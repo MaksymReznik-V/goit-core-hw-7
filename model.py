@@ -29,10 +29,10 @@ class Phone(Field):
 class Birthday(Field):
     def __init__(self, value):
         try:
-            date_to_string = datetime.strptime(value, '%d.%m.%Y').date()
+            datetime.strptime(value, '%d.%m.%Y').date()
         except ValueError:
             raise ValueError('Invalid date')
-        super().__init__(date_to_string)
+        super().__init__(value)
 
 
 class Record:
@@ -67,14 +67,15 @@ class Record:
         phones = "; ".join(p.value for p in self.phones)
 
         if self.birthday:
-            birthday_day = self.birthday.value.strftime('%d.%m.%Y')
-        else:
-            birthday_day = 'No date'
+            birthday_day = self.birthday.value
 
-        return (f"Contact name: "
-                f"{self.name.value}, "
-                f"Phones: {phones}, "
-                f"Birthday: {birthday_day}"
+            return (f"Contact name: {self.name.value},"
+                    f"Phones: {phones}, "
+                    f"Birthday: {birthday_day}"
+                    )
+
+        return (f"Contact name: {self.name.value},"
+                f"Phones: {phones}"
                 )
 
 
@@ -108,7 +109,7 @@ class AddressBook(UserDict):
             if record.birthday is None:
                 continue
 
-            birthday = record.birthday.value
+            birthday = datetime.strptime(record.birthday.value, "%d.%m.%Y").date()
             birthday_this_year = birthday.replace(year=today.year)
 
             if birthday_this_year < today:
